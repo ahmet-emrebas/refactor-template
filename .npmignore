@@ -6,4 +6,6 @@ jest.config.js
 package-lock.json
 tsconfig.json
 *.spec.js
+*.spec.ts
 *.test.js
+*.test.ts
