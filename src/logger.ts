@@ -16,7 +16,12 @@ class LoggerClass implements ILogger {
       .split(/\\/g)
       .pop()
       .replace(/\.ts|\.js/g, '');
-    const MSG = log.msg.trim();
+    if (log.msg && typeof log.msg == 'string') {
+      log.msg = log.msg.trim();
+    } else if (log.msg['msg']) {
+      log.msg = log.msg['msg'];
+    }
+    const MSG = log.msg || 'There is no message for this error';
     const message = `[${FILE_NAME}] \t${MSG}`;
     switch (type) {
       case 'log':

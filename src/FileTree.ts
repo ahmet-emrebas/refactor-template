@@ -1,7 +1,7 @@
 import { cwd } from 'process';
-import { join, relative } from 'path';
-import { createFile, readdir, readFile, writeFile } from 'fs-extra';
-import { isFile, toCamelCase } from './util';
+import { join } from 'path';
+import { createFile, readdir, readFile, stat, writeFile } from 'fs-extra';
+import { toCamelCase } from './util';
 import { Logger } from './logger';
 
 export class FileTree {
@@ -16,6 +16,8 @@ export class FileTree {
    * @param rootDir
    */
   constructor(private relativePath: string, isRootDir?: boolean) {
+    if (!relativePath) throw new Error('Relative path is required');
+
     // Resolving relative path
     this.relativePath = join('', this.relativePath);
     const arr = this.relativePath.split(/\\/);
@@ -24,16 +26,21 @@ export class FileTree {
     // If it is rootDir, set the rootDir fileName.
     if (isRootDir) {
       this.rootDir = this.fileName;
-      Logger.error(arr.toString(), 'FileTree');
     }
   }
 
   async init() {
-    Logger.info('Initializing the context', 'Refactor');
     this.absolutePath = join(cwd(), this.relativePath);
-    if (await isFile(this.relativePath)) {
+
+    Logger.info(`Initializing the context of ${this.absolutePath}`, 'Refactor');
+    // Is File
+    if ((await stat(this.absolutePath)).isFile()) {
       this.content = (await readFile(this.absolutePath)).toString();
       return;
+    }
+
+    if (!(await stat(this.absolutePath)).isDirectory()) {
+      throw new Error(`This file ${this.absolutePath} does not exist!`);
     }
 
     for (let dir of await readdir(this.absolutePath))
@@ -41,7 +48,7 @@ export class FileTree {
 
     for (let branch of this.branches) await branch.init();
 
-    Logger.info('Successfully initialized the context', 'Refactor');
+    Logger.info(`Successfully initialized the context of ${this.absolutePath}`, 'Refactor');
     return this;
   }
 
@@ -60,7 +67,6 @@ export class FileTree {
    * @param fileName  File or folder name
    */
   refactorTo(fileName: string, rootDirParam?: string) {
-    Logger.info(`Refactoring to ${fileName}.`, 'Refactor');
     if (this.rootDir) {
       this.relativePath = this.relativePath.replace(this.fileName, fileName);
       this.absolutePath = this.absolutePath.replace(this.fileName, fileName);
@@ -88,6 +94,7 @@ export class FileTree {
   }
 
   private replaceContent(newValue: string, placeHolder: string) {
+    Logger.info(`Repalacing content of ${this.absolutePath}`, 'Refactor');
     this.content = this.content.replace(
       new RegExp(toCamelCase(placeHolder), 'ig'),
       toCamelCase(newValue),
@@ -95,7 +102,6 @@ export class FileTree {
   }
 
   public async writeToFiles() {
-    Logger.info(`Started writing files`, 'Refactor');
     if (this.content.length > 0) {
       Logger.info(`Writing file ${this.absolutePath}`, 'Refactor');
       await createFile(this.absolutePath);

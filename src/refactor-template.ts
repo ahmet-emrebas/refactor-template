@@ -5,25 +5,6 @@ import { Logger } from './logger';
 import { FileTree } from './FileTree';
 import yargs = require('yargs');
 
-function runRefactorer(source: string | unknown, target: string | unknown) {
-  if (!(source && target)) {
-    Logger.error(
-      'Please pass the source and target! For more information run refactor-template --help command',
-      'Refactor',
-    );
-  }
-  if (source && target && typeof source == 'string' && typeof target == 'string') {
-    new FileTree(source, true).init().then((f) => {
-      f.refactorTo(target)
-        .writeToFiles()
-        .then((result) => {})
-        .catch((err) => {
-          Logger.error('Could not write the files', 'Refactor');
-        });
-    });
-  }
-}
-
 export const runCLI = () => {
   yargs(hideBin(process.argv))
     .command(
@@ -37,9 +18,14 @@ export const runCLI = () => {
           describe: 'name of the target folder/file',
         });
       },
-      (argv) => {
+      async (argv) => {
         const { source, target } = argv;
-        runRefactorer(source, target);
+        try {
+          const fileTree = await new FileTree(source as string, true).init();
+          await fileTree.refactorTo(target as string).writeToFiles();
+        } catch (err) {
+          Logger.error(err || 'Could not process the file paths!', 'Refactor');
+        }
       },
     )
     .option('verbose', {
