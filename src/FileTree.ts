@@ -1,5 +1,5 @@
 import { cwd } from 'process';
-import { join } from 'path';
+import { join, relative } from 'path';
 import { createFile, readdir, readFile, writeFile } from 'fs-extra';
 import { isFile, toCamelCase } from './util';
 import { Logger } from './logger';
@@ -19,7 +19,7 @@ export class FileTree {
     const arr = this.relativePath.split(/\\/);
     this.fileName = arr.pop();
     if (isRootDir) {
-      this.rootDir = arr.pop() || this.fileName;
+      this.rootDir = this.fileName;
     }
   }
 
@@ -59,10 +59,8 @@ export class FileTree {
     if (this.rootDir) {
       this.relativePath = this.relativePath.replace(this.fileName, fileName);
       this.absolutePath = this.absolutePath.replace(this.fileName, fileName);
-      this.content = this.content.replace(
-        new RegExp(toCamelCase(this.fileName), 'g'),
-        toCamelCase(fileName),
-      );
+      this.replaceContent(fileName, this.rootDir);
+
       for (let branch of this.branches) {
         branch.refactorTo(fileName, this.rootDir);
       }
@@ -72,10 +70,8 @@ export class FileTree {
         this.fileName = this.fileName.replace(rootDirParam, fileName);
         this.relativePath = this.relativePath.replace(new RegExp(rootDirParam, 'g'), fileName);
         this.absolutePath = this.absolutePath.replace(new RegExp(rootDirParam, 'g'), fileName);
-        this.content = this.content.replace(
-          new RegExp(toCamelCase(rootDirParam), 'g'),
-          toCamelCase(fileName),
-        );
+
+        this.replaceContent(fileName, rootDirParam);
 
         for (let branch of this.branches) {
           branch.refactorTo(fileName, rootDirParam);
@@ -84,6 +80,13 @@ export class FileTree {
     }
     Logger.info(`Successfully refactored to ${fileName}`, 'Refactor');
     return this;
+  }
+
+  private replaceContent(newValue: string, placeHolder: string) {
+    this.content = this.content.replace(
+      new RegExp(toCamelCase(placeHolder), 'ig'),
+      toCamelCase(newValue),
+    );
   }
 
   public async writeToFiles() {

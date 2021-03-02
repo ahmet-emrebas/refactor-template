@@ -9,8 +9,10 @@
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "tsc --build",
-    "start": "ts-node src/refactor-template.ts ",
-    "start:dev": "nodemon src/refactor-template.ts",
+    "prebuild:watch": "npm run prebuild",
+    "build:watch": "tsc --build --watch",
+    "start": "ts-node src/main.ts ",
+    "start:dev": "nodemon src/main.ts",
     "start:prod": "node main.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",

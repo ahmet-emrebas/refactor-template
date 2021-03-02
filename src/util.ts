@@ -27,7 +27,12 @@ export function toCamelCase(text: string) {
         camelCaseText += i[0].toUpperCase() + i.slice(1, i.length);
       }
       return camelCaseText;
+    } else {
+      if (d == '_') {
+        return text[0].toUpperCase() + text.slice(1, text.length);
+      } else {
+        continue;
+      }
     }
-    return d[0].toUpperCase() + d.slice(1, d.length);
   }
 }
