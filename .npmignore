@@ -1,3 +1,9 @@
-testfolder
+test-easy
+node_modules
+src
+.*
+jest.config.js
+package-lock.json
+tsconfig.json
 *.spec.js
 *.test.js
