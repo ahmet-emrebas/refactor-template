@@ -7,7 +7,7 @@
     "refactor-template": "main.js"
   },
   "scripts": {
-    "prebuild": "rimraf dist",
+    "prebuild": "npm run test && rimraf dist",
     "build": "tsc --build",
     "prebuild:watch": "npm run prebuild",
     "build:watch": "tsc --build --watch",
