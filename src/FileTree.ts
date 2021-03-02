@@ -16,10 +16,15 @@ export class FileTree {
    * @param rootDir
    */
   constructor(private relativePath: string, isRootDir?: boolean) {
+    // Resolving relative path
+    this.relativePath = join('', this.relativePath);
     const arr = this.relativePath.split(/\\/);
+    // Getting the folder/file name.
     this.fileName = arr.pop();
+    // If it is rootDir, set the rootDir fileName.
     if (isRootDir) {
       this.rootDir = this.fileName;
+      Logger.error(arr.toString(), 'FileTree');
     }
   }
 
