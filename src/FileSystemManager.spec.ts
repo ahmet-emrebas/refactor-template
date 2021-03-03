@@ -1,3 +1,4 @@
+import { readFile, readFileSync, writeFile, writeFileSync } from 'fs-extra';
 import {
   PathIsEmptyException,
   PathIsNotValidException,
@@ -96,6 +97,12 @@ describe('FileSystemManager', () => {
       ['', PathIsEmptyException],
     ])('readdirs(%s) should THROW %s', async (input, expected) => {
       return expect(async () => await FileSystemManager.readdirs(input)).rejects.toThrow(expected);
+    });
+  });
+
+  describe('writeFile should return true.', () => {
+    it('writeFile should return true', async () => {
+      // Find out an elegant way to test IO.
     });
   });
 });

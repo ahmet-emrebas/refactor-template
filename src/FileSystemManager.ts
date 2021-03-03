@@ -21,6 +21,13 @@ export class NoSuchAFile extends FileSystemMangerError {
   }
 }
 
+/** Thrown when there is No under the specified path. */
+export class NoSuchADirectory extends FileSystemMangerError {
+  constructor() {
+    super('There is No directory under the specified path.');
+  }
+}
+
 /** Thrown when path is NOT valid. */
 export class PathIsNotValidException extends FileSystemMangerError {
   constructor() {
@@ -118,7 +125,7 @@ export class FileSystemManager {
    */
   static isRelativePathValid(relativePath: string) {
     if (relativePath === '' || !relativePath) throw new PathIsEmptyException();
-    if (relativePath.match(new RegExp(/[?|<|>|"|:]/))) throw new PathIsNotValidException();
+    if (relativePath.match(new RegExp(/[\?|<|>|"|:]/))) throw new PathIsNotValidException();
     return true;
   }
 
@@ -136,16 +143,38 @@ export class FileSystemManager {
   }
 
   /**
+   * Check the relativePath pointing at a directory or not.
+   * @param relativePath
+   */
+  static async isDirectory(relativePath: string): Promise<boolean> {
+    this.isRelativePathValid(relativePath);
+    try {
+      return (await stat(relativePath)).isDirectory();
+    } catch (err) {
+      throw new NoSuchADirectory();
+    }
+  }
+
+  /**
    *
    * @param relativePath
    */
   static async readdirs(relativePath: string): Promise<string[]> | never {
+    this.isDirectory(relativePath);
     return await readdir(this.resolveRelativePath(relativePath));
   }
 
-  static writeFile(relativePath: string): Promise<void> {
-    throw new Error('Not Implemented');
+  static async writeFile(relativePath: string, content: string): Promise<true> | never {
+    this.isFile(relativePath);
+    try {
+      await writeFile(relativePath, content);
+      return true;
+    } catch (err) {
+      throw err;
+    }
   }
+
+  static async clearFile(relativePath: string) {}
 
   static readFile(relativePath: string): Promise<string> {
     throw new Error('Not Implemented');
