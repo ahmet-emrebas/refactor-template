@@ -45,13 +45,14 @@ export class PathIsEmptyException extends FileSystemMangerError {
 export class FileSystemManager {
   /**
    * File Name.
+   * If this is root,
    * @example user.model.ts
    * @type string
    */
   public fileName: string;
 
   /**
-   * List of FileSystemManager, representing folders and files.
+   * List of FileSystemManager
    * @types FileSystemManager[]
    */
   public branches: FileSystemManager[] = [];
@@ -68,8 +69,31 @@ export class FileSystemManager {
   }
 
   /**
-   * Refactor the current directory three to new one.
-   * To generate a new folder from the configuration of this instance with a different directory path newDirectoryRelativePath.
+   * @returns {Promise<FileSystemManager>}
+   */
+  public async init(): Promise<FileSystemManager> {
+    if (await FileSystemManager.isFile(this.relativeFilePath)) {
+      this.content = (await readFile(this.relativeFilePath)).toString();
+    } else if (await FileSystemManager.isDirectory(this.relativeFilePath)) {
+      const dirs = await readdir(this.relativeFilePath);
+      for (let dir of dirs) {
+        const currentPath = join(this.relativeFilePath, dir);
+        if (await FileSystemManager.isFile(currentPath)) {
+          const newFile = new FileSystemManager(currentPath);
+          newFile.init();
+          this.branches.push(newFile);
+        } else if (await FileSystemManager.isDirectory(currentPath)) {
+          const newDir = new FileSystemManager(currentPath);
+          newDir.init();
+          this.branches.push(newDir);
+        }
+      }
+    }
+    return this;
+  }
+
+  /**
+   * Refactor the current directory three by the new parameter.
    * @param {string} newDirectoryRelativePath
    * @returns void
    * @throws {PathIsNotValidException}
@@ -83,9 +107,10 @@ export class FileSystemManager {
   /**
    * Parse the workingRelative path from the relative path.
    * @example parserWorkingRelativePath('src/users') will return 'users'.
-   * @param {string}relativePath
+   * @param {string} relativePath
    * @returns {string}
-   * @throws PathIsNotValidException, PathIsEmptyException.
+   * @throws {PathIsNotValidException}.
+   * @throws {PathIsEmptyException}.
    */
   static parseWorkingRelativePath(relativePath: string): string | never {
     return this.resolveRelativePath(relativePath).split('\\').pop();
@@ -95,7 +120,7 @@ export class FileSystemManager {
    * Resolve relative path as nodejs path.
    * @param {string} relativePath
    * @example resolveRelativePat('src/users') return 'src\users'.
-   * @returns string
+   * @returns {string}
    * @throws {PathIsNotValidException}
    * @throws {PathIsEmptyException}
    */
@@ -172,7 +197,7 @@ export class FileSystemManager {
    * @throws {NoSuchAFile}
    */
   async createFileTree(relativePath: string, content: string): Promise<true> | never {
-    FileSystemManager.isFile(relativePath);
+    await FileSystemManager.isFile(relativePath);
     try {
       await writeFile(relativePath, content);
       return true;
@@ -189,7 +214,16 @@ export class FileSystemManager {
    * @throws {NoSuchAFile}
    */
   static async clearFile(relativePath: string) {
-    FileSystemManager.isFile(relativePath);
+    await FileSystemManager.isFile(relativePath);
     await writeFile(relativePath, '');
+  }
+
+  toString() {
+    return JSON.stringify({
+      content: this.content,
+      fileName: this.fileName,
+      relativeFilePath: this.relativeFilePath,
+      branches: this.branches.map(toString),
+    });
   }
 }

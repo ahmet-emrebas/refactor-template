@@ -11,11 +11,11 @@ describe('FileSystemManager', () => {
   const instance = new FileSystemManager('testdata');
 
   it('FileSystemManager should instantiate correctly.', () => {
-    const fsm = new FileSystemManager('src/users', 'content');
+    const fsm = new FileSystemManager('testdata', 'content');
 
     expect(fsm.content).toBe('content');
-    expect(fsm.fileName).toBe('users');
-    expect(fsm.relativeFilePath).toBe('src\\users');
+    expect(fsm.fileName).toBe('testdata');
+    expect(fsm.relativeFilePath).toBe('testdata');
   });
 
   describe('isRelativePathValid', () => {
@@ -152,5 +152,11 @@ describe('FileSystemManager', () => {
         expect(ninstance.fileName).toBe(expected[1]);
       },
     );
+  });
+
+  describe('toString', () => {
+    it('toString() should return the content', async () => {
+      expect(await (await new FileSystemManager('testdata').init()).toString).toContain('testdata');
+    });
   });
 });
