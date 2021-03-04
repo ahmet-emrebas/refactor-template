@@ -156,7 +156,9 @@ describe('FileSystemManager', () => {
 
   describe('toString', () => {
     it('toString() should return the content', async () => {
-      expect(await (await new FileSystemManager('testdata').init()).toString).toContain('testdata');
+      expect((await new FileSystemManager('testdata').init()).toString()).resolves.toContain(
+        'testdata',
+      );
     });
   });
 });

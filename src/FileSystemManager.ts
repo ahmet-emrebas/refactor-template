@@ -72,19 +72,19 @@ export class FileSystemManager {
    * @returns {Promise<FileSystemManager>}
    */
   public async init(): Promise<FileSystemManager> {
-    if (await FileSystemManager.isFile(this.relativeFilePath)) {
+    if (await FileSystemManager.isFileSoft(this.relativeFilePath)) {
       this.content = (await readFile(this.relativeFilePath)).toString();
-    } else if (await FileSystemManager.isDirectory(this.relativeFilePath)) {
+    } else if (await FileSystemManager.isDirectorySoft(this.relativeFilePath)) {
       const dirs = await readdir(this.relativeFilePath);
       for (let dir of dirs) {
         const currentPath = join(this.relativeFilePath, dir);
-        if (await FileSystemManager.isFile(currentPath)) {
+        if (await FileSystemManager.isFileSoft(currentPath)) {
           const newFile = new FileSystemManager(currentPath);
-          newFile.init();
+          await newFile.init();
           this.branches.push(newFile);
-        } else if (await FileSystemManager.isDirectory(currentPath)) {
+        } else if (await FileSystemManager.isDirectorySoft(currentPath)) {
           const newDir = new FileSystemManager(currentPath);
-          newDir.init();
+          await newDir.init();
           this.branches.push(newDir);
         }
       }
@@ -160,6 +160,18 @@ export class FileSystemManager {
   }
 
   /**
+   * @returns {Promise<boolean>}
+   * @param {string} relativePath
+   */
+  static async isFileSoft(relativePath: string): Promise<boolean> {
+    try {
+      return this.isFile(relativePath);
+    } catch (err) {
+      return false;
+    }
+  }
+
+  /**
    * Check the relativePath pointing at a directory or not.
    * @param {string} relativePath
    * @returns {Promise<boolean>}
@@ -173,6 +185,18 @@ export class FileSystemManager {
       return (await stat(relativePath)).isDirectory();
     } catch (err) {
       throw new NoSuchADirectory();
+    }
+  }
+
+  /**
+   * @returns {Promise<boolean>}
+   * @param {string} relativePath
+   */
+  static async isDirectorySoft(relativePath: string): Promise<boolean> {
+    try {
+      return this.isDirectory(relativePath);
+    } catch (err) {
+      return false;
     }
   }
 
@@ -223,7 +247,7 @@ export class FileSystemManager {
       content: this.content,
       fileName: this.fileName,
       relativeFilePath: this.relativeFilePath,
-      branches: this.branches.map(toString),
+      branches: this.branches.map((e) => e.toString()),
     });
   }
 }
