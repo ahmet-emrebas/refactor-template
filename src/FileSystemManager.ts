@@ -79,12 +79,10 @@ export class FileSystemManager {
       for (let dir of dirs) {
         const currentPath = join(this.relativeFilePath, dir);
         if (await FileSystemManager.isFileSoft(currentPath)) {
-          const newFile = new FileSystemManager(currentPath);
-          await newFile.init();
+          const newFile = await new FileSystemManager(currentPath).init();
           this.branches.push(newFile);
         } else if (await FileSystemManager.isDirectorySoft(currentPath)) {
-          const newDir = new FileSystemManager(currentPath);
-          await newDir.init();
+          const newDir = await new FileSystemManager(currentPath).init();
           this.branches.push(newDir);
         }
       }
