@@ -4,6 +4,7 @@ import {
   PathIsNotValidException,
   FileSystemManager,
   NoSuchAFile,
+  NoSuchADirectory,
 } from './FileSystemManager';
 
 describe('FileSystemManager', () => {
@@ -87,6 +88,23 @@ describe('FileSystemManager', () => {
       ['?412', PathIsNotValidException],
     ])('isFile(%s) should THROW %s', (input, expected) => {
       FileSystemManager.isFile(input).catch((err) => {
+        expect(err).toBeInstanceOf(expected);
+      });
+    });
+  });
+
+  describe('isDirectory', () => {
+    it.each([['src', true]])('isDirectory(%s) should RETURN true', async (input, expected) => {
+      expect(await FileSystemManager.isDirectory(input)).toBe(expected);
+    });
+
+    it.each([
+      ['noneexistingdir', NoSuchADirectory],
+      ['', PathIsEmptyException],
+      [':', PathIsNotValidException],
+      ['?412', PathIsNotValidException],
+    ])('isDirectory(%s) should THROW %s', (input, expected) => {
+      FileSystemManager.isDirectory(input).catch((err) => {
         expect(err).toBeInstanceOf(expected);
       });
     });

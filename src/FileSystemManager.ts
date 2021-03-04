@@ -57,24 +57,25 @@ export class FileSystemManager {
   public branches: FileSystemManager[] = [];
 
   /**
-   * @param {string} directoryRelativePath Relative path to the directory. Ex. src/users, src/products, src/products/products-one.
+   * @param {string} directoryRelativePath  Relative path to the directory. Ex. src/users, src/products, src/products/products-one.
+   * @param {string} content file content
+   * @throws {PathIsNotValidException}
+   * @throws {PathIsEmptyException}
    */
   constructor(public relativeFilePath: string, public content?: string) {
     this.relativeFilePath = FileSystemManager.resolveRelativePath(this.relativeFilePath);
     this.fileName = this.relativeFilePath.split('\\').pop();
   }
 
-  /** Read directories, files, and store content and relative directories. */
-  public init() {}
-
   /**
    * Refactor the current directory three to new one.
    * To generate a new folder from the configuration of this instance with a different directory path newDirectoryRelativePath.
    * @param {string} newDirectoryRelativePath
    * @returns void
-   * @throws PathIsNotValidException, PathIsEmptyException.
+   * @throws {PathIsNotValidException}
+   * @throws {PathIsEmptyException}
    */
-  public refactorTo(newDirectoryRelativePath: string) {
+  public refactorTo(newDirectoryRelativePath: string): void | never {
     this.relativeFilePath = FileSystemManager.resolveRelativePath(newDirectoryRelativePath);
     this.fileName = this.relativeFilePath.split('\\').pop();
   }
@@ -82,33 +83,35 @@ export class FileSystemManager {
   /**
    * Parse the workingRelative path from the relative path.
    * @example parserWorkingRelativePath('src/users') will return 'users'.
-   * @param relativePath
-   * @returns string
+   * @param {string}relativePath
+   * @returns {string}
    * @throws PathIsNotValidException, PathIsEmptyException.
    */
-  static parseWorkingRelativePath(relativePath: string) {
+  static parseWorkingRelativePath(relativePath: string): string | never {
     return this.resolveRelativePath(relativePath).split('\\').pop();
   }
 
   /**
    * Resolve relative path as nodejs path.
-   * @param relativePath
+   * @param {string} relativePath
    * @example resolveRelativePat('src/users') return 'src\users'.
    * @returns string
-   * @throws PathIsNotValidException, PathIsEmptyException.
+   * @throws {PathIsNotValidException}
+   * @throws {PathIsEmptyException}
    */
-  static resolveRelativePath(relativePath: string) {
+  static resolveRelativePath(relativePath: string): string | never {
     this.isRelativePathValid(relativePath);
     return join('', relativePath);
   }
 
   /**
    * Relative path must NOT be empty and Not contains any item in the list [ '?', '<', '>', '"' , ":" "]
-   * @param path {string} relativePath
-   * @returns true
-   * @throws PathIsNotValidException, PathIsEmptyException
+   * @param {string} path  relativePath
+   * @returns {true}
+   * @throws {PathIsNotValidException}
+   * @throws {PathIsEmptyException}
    */
-  static isRelativePathValid(relativePath: string) {
+  static isRelativePathValid(relativePath: string): true | never {
     if (relativePath === '' || !relativePath) throw new PathIsEmptyException();
     if (relativePath.match(new RegExp(/[\?|<|>|"|:]/))) throw new PathIsNotValidException();
     return true;
@@ -116,10 +119,14 @@ export class FileSystemManager {
 
   /**
    * Check the relativePath pointing at a file or not.
-   * @param relativePath
+   * @param {string} relativePath
+   * @returns {Promise<boolean>}
+   * @throws {PathIsNotValidException}
+   * @throws {PathIsEmptyException}
+   * @throws {NoSuchAFile}
    */
-  static async isFile(relativePath: string): Promise<boolean> {
-    this.isRelativePathValid(relativePath);
+  static async isFile(relativePath: string): Promise<boolean> | never {
+    relativePath = this.resolveRelativePath(relativePath);
     try {
       return (await stat(relativePath)).isFile();
     } catch (err) {
@@ -129,10 +136,14 @@ export class FileSystemManager {
 
   /**
    * Check the relativePath pointing at a directory or not.
-   * @param relativePath
+   * @param {string} relativePath
+   * @returns {Promise<boolean>}
+   * @throws {PathIsNotValidException}
+   * @throws {PathIsEmptyException}
+   * @throws {NoSuchADirectory}
    */
-  static async isDirectory(relativePath: string): Promise<boolean> {
-    this.isRelativePathValid(relativePath);
+  static async isDirectory(relativePath: string): Promise<boolean> | never {
+    relativePath = this.resolveRelativePath(relativePath);
     try {
       return (await stat(relativePath)).isDirectory();
     } catch (err) {
@@ -141,16 +152,27 @@ export class FileSystemManager {
   }
 
   /**
-   *
-   * @param relativePath
+   * Read directives
+   * @return {Promise<string[]>} dirs
+   * @param {string} relativePath
+   * @throws {PathIsNotValidException}
+   * @throws {PathIsEmptyException}
+   * @throws {NoSuchADirectory}
    */
   static async readdirs(relativePath: string): Promise<string[]> | never {
     this.isDirectory(relativePath);
     return await readdir(this.resolveRelativePath(relativePath));
   }
 
-  static async writeFile(relativePath: string, content: string): Promise<true> | never {
-    this.isFile(relativePath);
+  /**
+   * @param {string} relativePath
+   * @param {string} content
+   * @throws {PathIsNotValidException}
+   * @throws {PathIsEmptyException}
+   * @throws {NoSuchAFile}
+   */
+  async createFileTree(relativePath: string, content: string): Promise<true> | never {
+    FileSystemManager.isFile(relativePath);
     try {
       await writeFile(relativePath, content);
       return true;
@@ -159,12 +181,15 @@ export class FileSystemManager {
     }
   }
 
+  /**
+   * clean the content of the file
+   * @param {string} relativePath
+   * @throws {PathIsNotValidException}
+   * @throws {PathIsEmptyException}
+   * @throws {NoSuchAFile}
+   */
   static async clearFile(relativePath: string) {
     FileSystemManager.isFile(relativePath);
     await writeFile(relativePath, '');
-  }
-
-  static async readFile(relativePath: string): Promise<string> {
-    return (await readFile(relativePath)).toString();
   }
 }
