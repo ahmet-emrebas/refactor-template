@@ -9,6 +9,14 @@ import {
 describe('FileSystemManager', () => {
   const instance = new FileSystemManager('testdata');
 
+  it('FileSystemManager should instantiate correctly.', () => {
+    const fsm = new FileSystemManager('src/users', 'content');
+
+    expect(fsm.content).toBe('content');
+    expect(fsm.fileName).toBe('users');
+    expect(fsm.relativeFilePath).toBe('src\\users');
+  });
+
   describe('isRelativePathValid', () => {
     // Valid arguments
     it.each(['src/user', 'src/users/user'])(
@@ -101,8 +109,30 @@ describe('FileSystemManager', () => {
   });
 
   describe('writeFile should return true.', () => {
-    it('writeFile should return true', async () => {
+    it('writeFile should return true', () => {
       // Find out an elegant way to test IO.
     });
+  });
+
+  describe('refactorTo', () => {
+    it.each([
+      [
+        ['src/user', 'product'].map((e) => FileSystemManager.resolveRelativePath(e)), //input
+        ['product', 'product'].map((e) => FileSystemManager.resolveRelativePath(e)), //expected
+      ],
+      [
+        ['src/user', 'src/model/product'].map((e) => FileSystemManager.resolveRelativePath(e)),
+        ['src/model/product', 'product'].map((e) => FileSystemManager.resolveRelativePath(e)),
+      ],
+    ])(
+      'refactorTo(%s) should REFACTOR TO  %s as first relative path and the second fileName',
+      (input, expected) => {
+        const ninstance = new FileSystemManager('input[0]');
+        ninstance.refactorTo(input[1]);
+
+        expect(ninstance.relativeFilePath).toBe(expected[0]);
+        expect(ninstance.fileName).toBe(expected[1]);
+      },
+    );
   });
 });

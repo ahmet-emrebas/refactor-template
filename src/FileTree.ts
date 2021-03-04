@@ -95,9 +95,20 @@ export class FileTree {
 
   private replaceContent(newValue: string, placeHolder: string) {
     Logger.info(`Repalacing content of ${this.absolutePath}`, 'Refactor');
+
     this.content = this.content.replace(
-      new RegExp(toCamelCase(placeHolder), 'ig'),
+      new RegExp(toCamelCase(placeHolder), 'g'),
       toCamelCase(newValue),
+    );
+
+    this.content = this.content.replace(
+      new RegExp(placeHolder.toLowerCase(), 'g'),
+      newValue.toLowerCase(),
+    );
+    
+    this.content = this.content.replace(
+      new RegExp(placeHolder.toUpperCase(), 'g'),
+      newValue.toUpperCase(),
     );
   }
 

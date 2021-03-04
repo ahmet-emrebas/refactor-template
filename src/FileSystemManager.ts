@@ -1,7 +1,7 @@
 import { join } from 'path';
 import { readFile, writeFile, readdir, stat } from 'fs-extra';
 import { cwd } from 'node:process';
-import { relative } from 'node:path';
+import { relative, resolve } from 'node:path';
 import { timeStamp } from 'node:console';
 
 export abstract class FileSystemMangerError extends Error {
@@ -44,43 +44,28 @@ export class PathIsEmptyException extends FileSystemMangerError {
 
 export class FileSystemManager {
   /**
-   * Directory to be processed or fileName.
-   * @example users, products, products-one etc.
+   * File Name.
+   * @example user.model.ts
    * @type string
    */
-  private workingRelativePath: string;
-
-  /**
-   * Relative path to the directory.
-   * @example src/users, src/products, src/products/products-one
-   * @type string
-   */
-  private directoryRelativePath: string;
-
-  /**
-   * File content if this instance is a reprentation of a file.
-   * @type string
-   */
-  private content: string = undefined;
+  public fileName: string;
 
   /**
    * List of FileSystemManager, representing folders and files.
    * @types FileSystemManager[]
    */
-  private branches: FileSystemManager[] = [];
+  public branches: FileSystemManager[] = [];
 
   /**
    * @param {string} directoryRelativePath Relative path to the directory. Ex. src/users, src/products, src/products/products-one.
    */
-  constructor(directoryRelativePath: string) {
-    FileSystemManager.isRelativePathValid(directoryRelativePath);
-    this.directoryRelativePath = directoryRelativePath;
+  constructor(public relativeFilePath: string, public content?: string) {
+    this.relativeFilePath = FileSystemManager.resolveRelativePath(this.relativeFilePath);
+    this.fileName = this.relativeFilePath.split('\\').pop();
   }
 
   /** Read directories, files, and store content and relative directories. */
-  public init() {
-    FileSystemManager.isFile(this.directoryRelativePath);
-  }
+  public init() {}
 
   /**
    * Refactor the current directory three to new one.
@@ -90,8 +75,8 @@ export class FileSystemManager {
    * @throws PathIsNotValidException, PathIsEmptyException.
    */
   public refactorTo(newDirectoryRelativePath: string) {
-    FileSystemManager.isRelativePathValid(newDirectoryRelativePath);
-    throw new Error('Not Implmented!');
+    this.relativeFilePath = FileSystemManager.resolveRelativePath(newDirectoryRelativePath);
+    this.fileName = this.relativeFilePath.split('\\').pop();
   }
 
   /**
@@ -174,13 +159,12 @@ export class FileSystemManager {
     }
   }
 
-  static async clearFile(relativePath: string) {}
-
-  static readFile(relativePath: string): Promise<string> {
-    throw new Error('Not Implemented');
+  static async clearFile(relativePath: string) {
+    FileSystemManager.isFile(relativePath);
+    await writeFile(relativePath, '');
   }
 
-  static refactorFile(relativePath: string, targetName: string): void {
-    throw new Error('Not Implemented');
+  static async readFile(relativePath: string): Promise<string> {
+    return (await readFile(relativePath)).toString();
   }
 }
