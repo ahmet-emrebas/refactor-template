@@ -19,7 +19,7 @@ export class FileTree {
     if (!relativePath) throw new Error('Relative path is required');
 
     // Resolving relative path
-    this.relativePath = join('', this.relativePath);
+    this.relativePath = join(this.relativePath);
     const arr = this.relativePath.split(/\\/);
     // Getting the folder/file name.
     this.fileName = arr.pop();
@@ -105,7 +105,7 @@ export class FileTree {
       new RegExp(placeHolder.toLowerCase(), 'g'),
       newValue.toLowerCase(),
     );
-    
+
     this.content = this.content.replace(
       new RegExp(placeHolder.toUpperCase(), 'g'),
       newValue.toUpperCase(),

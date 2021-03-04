@@ -1,8 +1,5 @@
 import { join } from 'path';
-import { readFile, writeFile, readdir, stat } from 'fs-extra';
-import { cwd } from 'node:process';
-import { relative, resolve } from 'node:path';
-import { timeStamp } from 'node:console';
+import { readFile as readFileAsync, writeFile, readdir, stat, readFileSync, open } from 'fs-extra';
 
 export abstract class FileSystemMangerError extends Error {
   constructor(msg: string) {
@@ -30,15 +27,17 @@ export class NoSuchADirectory extends FileSystemMangerError {
 
 /** Thrown when path is NOT valid. */
 export class PathIsNotValidException extends FileSystemMangerError {
-  constructor() {
-    super('Path is empty or contains forbidden characters, :, ?, >, <, or "!!!');
+  constructor(relativePath?: string) {
+    super(
+      `Path, [${relativePath}],  is empty or contains forbidden characters, :, ?, >, <, or "!!!`,
+    );
   }
 }
 
 /** Thrown when the path is empty. */
 export class PathIsEmptyException extends FileSystemMangerError {
-  constructor() {
-    super('Path is empty!!!');
+  constructor(relativePath?: string) {
+    super(`Path, [${relativePath}], is empty!!!`);
   }
 }
 
@@ -69,25 +68,22 @@ export class FileSystemManager {
   }
 
   /**
-   * @returns {Promise<FileSystemManager>}
+   * @returns {Promise<void>}
    */
-  public async init(): Promise<FileSystemManager> {
-    if (await FileSystemManager.isFileSoft(this.relativeFilePath)) {
-      this.content = (await readFile(this.relativeFilePath)).toString();
-    } else if (await FileSystemManager.isDirectorySoft(this.relativeFilePath)) {
-      const dirs = await readdir(this.relativeFilePath);
+  public async init(): Promise<void> {
+    const cpath = this.relativeFilePath;
+    if (await FileSystemManager.isFileSoft(cpath)) {
+      this.content = (await readFileAsync(cpath)).toString();
+    } else if (await FileSystemManager.isDirectorySoft(cpath)) {
+      const dirs = await FileSystemManager.readdirs(cpath);
       for (let dir of dirs) {
-        const currentPath = join(this.relativeFilePath, dir);
-        if (await FileSystemManager.isFileSoft(currentPath)) {
-          const newFile = await new FileSystemManager(currentPath).init();
-          this.branches.push(newFile);
-        } else if (await FileSystemManager.isDirectorySoft(currentPath)) {
-          const newDir = await new FileSystemManager(currentPath).init();
-          this.branches.push(newDir);
-        }
+        const currentPath = join(cpath, dir);
+        const newFile = new FileSystemManager(currentPath);
+        await newFile.init();
+        this.branches.push(newFile);
       }
     }
-    return this;
+    return;
   }
 
   /**
@@ -123,8 +119,9 @@ export class FileSystemManager {
    * @throws {PathIsEmptyException}
    */
   static resolveRelativePath(relativePath: string): string | never {
-    this.isRelativePathValid(relativePath);
-    return join('', relativePath);
+    if (this.isRelativePathValid(relativePath)) {
+      return join('', relativePath);
+    }
   }
 
   /**
@@ -135,8 +132,15 @@ export class FileSystemManager {
    * @throws {PathIsEmptyException}
    */
   static isRelativePathValid(relativePath: string): true | never {
-    if (relativePath === '' || !relativePath) throw new PathIsEmptyException();
-    if (relativePath.match(new RegExp(/[\?|<|>|"|:]/))) throw new PathIsNotValidException();
+    if (relativePath == undefined) {
+      throw new PathIsEmptyException(undefined);
+    }
+    if (relativePath == '') {
+      throw new PathIsEmptyException(relativePath);
+    }
+    if (relativePath.match(new RegExp(/[\?|<|>|"|:]/))) {
+      throw new PathIsNotValidException(relativePath);
+    }
     return true;
   }
 
@@ -163,7 +167,7 @@ export class FileSystemManager {
    */
   static async isFileSoft(relativePath: string): Promise<boolean> {
     try {
-      return this.isFile(relativePath);
+      return await this.isFile(relativePath);
     } catch (err) {
       return false;
     }
@@ -192,7 +196,7 @@ export class FileSystemManager {
    */
   static async isDirectorySoft(relativePath: string): Promise<boolean> {
     try {
-      return this.isDirectory(relativePath);
+      return await this.isDirectory(relativePath);
     } catch (err) {
       return false;
     }
@@ -207,8 +211,9 @@ export class FileSystemManager {
    * @throws {NoSuchADirectory}
    */
   static async readdirs(relativePath: string): Promise<string[]> | never {
-    this.isDirectory(relativePath);
-    return await readdir(this.resolveRelativePath(relativePath));
+    if (await this.isDirectory(relativePath)) {
+      return await readdir(this.resolveRelativePath(relativePath));
+    }
   }
 
   /**
@@ -219,12 +224,13 @@ export class FileSystemManager {
    * @throws {NoSuchAFile}
    */
   async createFileTree(relativePath: string, content: string): Promise<true> | never {
-    await FileSystemManager.isFile(relativePath);
-    try {
-      await writeFile(relativePath, content);
-      return true;
-    } catch (err) {
-      throw err;
+    if (await FileSystemManager.isFile(relativePath)) {
+      try {
+        await writeFile(relativePath, content);
+        return true;
+      } catch (err) {
+        throw err;
+      }
     }
   }
 
@@ -240,7 +246,7 @@ export class FileSystemManager {
     await writeFile(relativePath, '');
   }
 
-  toString() {
+  toString(): string {
     return JSON.stringify({
       content: this.content,
       fileName: this.fileName,
@@ -249,3 +255,9 @@ export class FileSystemManager {
     });
   }
 }
+
+const s = new FileSystemManager('testdata');
+
+s.init().then((e) => {
+  console.log(s.toString());
+});

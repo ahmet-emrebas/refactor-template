@@ -1,4 +1,3 @@
-import { readFile, readFileSync, writeFile, writeFileSync } from 'fs-extra';
 import {
   PathIsEmptyException,
   PathIsNotValidException,
@@ -8,8 +7,6 @@ import {
 } from './FileSystemManager';
 
 describe('FileSystemManager', () => {
-  const instance = new FileSystemManager('testdata');
-
   it('FileSystemManager should instantiate correctly.', () => {
     const fsm = new FileSystemManager('testdata', 'content');
 
@@ -78,7 +75,8 @@ describe('FileSystemManager', () => {
 
   describe('isFile', () => {
     it.each([['src/logger.ts', true]])('isFile(%s) should RETURN true', async (input, expected) => {
-      expect(await FileSystemManager.isFile(input)).toBe(expected);
+      const actual = await FileSystemManager.isFile(input);
+      expect(actual).toBe(expected);
     });
 
     it.each([
@@ -86,16 +84,19 @@ describe('FileSystemManager', () => {
       ['', PathIsEmptyException],
       [':', PathIsNotValidException],
       ['?412', PathIsNotValidException],
-    ])('isFile(%s) should THROW %s', (input, expected) => {
-      FileSystemManager.isFile(input).catch((err) => {
+    ])('isFile(%s) should THROW %s', async (input, expected) => {
+      try {
+        await FileSystemManager.isFile(input);
+      } catch (err) {
         expect(err).toBeInstanceOf(expected);
-      });
+      }
     });
   });
 
   describe('isDirectory', () => {
     it.each([['src', true]])('isDirectory(%s) should RETURN true', async (input, expected) => {
-      expect(await FileSystemManager.isDirectory(input)).toBe(expected);
+      const actual = await FileSystemManager.isDirectory(input);
+      expect(actual).toBe(expected);
     });
 
     it.each([
@@ -103,62 +104,54 @@ describe('FileSystemManager', () => {
       ['', PathIsEmptyException],
       [':', PathIsNotValidException],
       ['?412', PathIsNotValidException],
-    ])('isDirectory(%s) should THROW %s', (input, expected) => {
-      FileSystemManager.isDirectory(input).catch((err) => {
-        expect(err).toBeInstanceOf(expected);
-      });
+    ])('isDirectory(%s) should THROW %s', async (input, expected) => {
+      try {
+        await FileSystemManager.isDirectory(input);
+      } catch (actualError) {
+        expect(actualError).toBeInstanceOf(expected);
+      }
     });
   });
 
   describe('readdirs', () => {
     it.each([
-      ['testdata', ['testuser', 'one', 'two'].sort()],
-      ['testdata/testuser', ['index.ts', 'testuser12'].sort()],
+      ['testdata', ['testuser', 'one', 'two']],
+      ['testdata/testuser', ['index.ts', 'testuser12']],
     ])('readdir(%s) should RETURN %s', async (input, expected) => {
-      expect(await FileSystemManager.readdirs(input)).toEqual(expected.sort());
+      expect((await FileSystemManager.readdirs(input)).sort()).toEqual(expected.sort());
     });
 
     it.each([
       [':', PathIsNotValidException],
       ['', PathIsEmptyException],
     ])('readdirs(%s) should THROW %s', async (input, expected) => {
-      return expect(async () => await FileSystemManager.readdirs(input)).rejects.toThrow(expected);
-    });
-  });
-
-  describe('writeFile should return true.', () => {
-    it('writeFile should return true', () => {
-      // Find out an elegant way to test IO.
+      const actualFunction = async () => await FileSystemManager.readdirs(input);
+      return expect(actualFunction).rejects.toThrow(expected);
     });
   });
 
   describe('refactorTo', () => {
     it.each([
-      [
-        ['src/user', 'product'].map((e) => FileSystemManager.resolveRelativePath(e)), //input
-        ['product', 'product'].map((e) => FileSystemManager.resolveRelativePath(e)), //expected
-      ],
-      [
-        ['src/user', 'src/model/product'].map((e) => FileSystemManager.resolveRelativePath(e)),
-        ['src/model/product', 'product'].map((e) => FileSystemManager.resolveRelativePath(e)),
-      ],
+      ['product', ['product', 'product']], //new path , resolved path, resolved filename.
+      ['src/user', ['src\\user', 'user']],
     ])(
       'refactorTo(%s) should REFACTOR TO  %s as first relative path and the second fileName',
       (input, expected) => {
-        const ninstance = new FileSystemManager('input[0]');
-        ninstance.refactorTo(input[1]);
+        const fileInstance = new FileSystemManager('something');
+        fileInstance.refactorTo(input);
 
-        expect(ninstance.relativeFilePath).toBe(expected[0]);
-        expect(ninstance.fileName).toBe(expected[1]);
+        const resolvedInput = FileSystemManager.resolveRelativePath(input);
+        expect(fileInstance.relativeFilePath).toBe(expected[0]);
+        expect(fileInstance.fileName).toBe(expected[1]);
       },
     );
   });
 
   describe('toString', () => {
     it('toString() should return the content', async () => {
-      expect((await new FileSystemManager('testdata').init()).toString()).resolves.toContain(
-        'testdata',
-      );
+      const instance = new FileSystemManager('testdata');
+      await instance.init();
+      expect(instance.toString()).toContain('testdata');
     });
   });
 });
