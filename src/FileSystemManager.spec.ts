@@ -115,10 +115,10 @@ describe('FileSystemManager', () => {
 
   describe('readdirs', () => {
     it.each([
-      ['testdata', ['testuser', 'one', 'two']],
-      ['testdata/testuser', ['index.ts', 'testuser12']],
+      ['testdata', ['test.ts']],
+      ['testdata/testuser', ['index.ts']],
     ])('readdir(%s) should RETURN %s', async (input, expected) => {
-      expect((await FileSystemManager.readdirs(input)).sort()).toEqual(expected.sort());
+      expect((await FileSystemManager.readdirs(input)).sort()).toContain(expected[0]);
     });
 
     it.each([
@@ -138,7 +138,7 @@ describe('FileSystemManager', () => {
       'refactorTo(%s) should REFACTOR TO  %s as first relative path and the second fileName',
       (input, expected) => {
         const fileInstance = new FileSystemManager('something');
-        fileInstance.refactorTo(input);
+        fileInstance.refactorTo(input, 'user', 'product');
 
         const resolvedInput = FileSystemManager.resolveRelativePath(input);
         expect(fileInstance.relativeFilePath).toBe(expected[0]);

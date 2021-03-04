@@ -1,5 +1,5 @@
 import { join } from 'path';
-import { readFile as readFileAsync, writeFile, readdir, stat, readFileSync, open } from 'fs-extra';
+import { readFile as readFileAsync, writeFile, readdir, stat, createFile, mkdir } from 'fs-extra';
 
 export abstract class FileSystemMangerError extends Error {
   constructor(msg: string) {
@@ -76,26 +76,101 @@ export class FileSystemManager {
       this.content = (await readFileAsync(cpath)).toString();
     } else if (await FileSystemManager.isDirectorySoft(cpath)) {
       const dirs = await FileSystemManager.readdirs(cpath);
+
       for (let dir of dirs) {
         const currentPath = join(cpath, dir);
-        const newFile = new FileSystemManager(currentPath);
-        await newFile.init();
-        this.branches.push(newFile);
+        const newBranch = new FileSystemManager(currentPath);
+        await newBranch.init();
+        this.branches.push(newBranch);
       }
     }
     return;
   }
 
   /**
-   * Refactor the current directory three by the new parameter.
+   * Refactor the current directory three by the new path.
+   * Replace placeholder with the value in the file names, folder names, and content
    * @param {string} newDirectoryRelativePath
+   * @param {string} placeholder
+   * @param {string} value
    * @returns void
    * @throws {PathIsNotValidException}
    * @throws {PathIsEmptyException}
    */
-  public refactorTo(newDirectoryRelativePath: string): void | never {
+  public refactorTo(
+    newDirectoryRelativePath: string,
+    placeHolder: string,
+    value: string,
+    isBranch = false,
+  ): void | never {
     this.relativeFilePath = FileSystemManager.resolveRelativePath(newDirectoryRelativePath);
     this.fileName = this.relativeFilePath.split('\\').pop();
+
+    const placeHolderVariations = Object.values(this.textVariations(placeHolder));
+    const valueVariations = Object.values(this.textVariations(value));
+    const variations = placeHolderVariations.map((p) => [p, valueVariations.shift()]);
+
+    for (let variation of variations) {
+      this.content = this.content?.replace(new RegExp(variation[0], 'g'), variation[1]);
+      if (isBranch) {
+        this.fileName = this.fileName.replace(new RegExp(variation[0], 'g'), variation[1]);
+        this.relativeFilePath = this.relativeFilePath.replace(
+          new RegExp(variation[0], 'g'),
+          variation[1],
+        );
+      }
+    }
+    for (let branch of this.branches) {
+      branch.refactorTo(join(newDirectoryRelativePath, branch.fileName), placeHolder, value, true);
+    }
+  }
+
+  public async writeHardFile() {
+    await writeFile('testData/test.ts', 'content');
+    if (this.content) {
+      await createFile(this.relativeFilePath);
+      await writeFile(this.relativeFilePath, this.content);
+      for (let branch of this.branches) {
+        await branch.writeHardFile();
+      }
+    } else {
+      await mkdir(this.relativeFilePath);
+      for (let branch of this.branches) {
+        await branch.writeHardFile();
+      }
+    }
+  }
+
+  /**
+   * Create variations of the text like UpperCase, LowerCase, PascalCase, CamelCase, SnakeCase
+   * @param placeHolder
+   * @returns
+   */
+  private textVariations(placeHolder: string) {
+    placeHolder = placeHolder
+      .split('')
+      .map((e) => (e.charCodeAt(0) >= 65 && e.charCodeAt(0) <= 90 ? '-' + e : e))
+      .join('');
+
+    let segments = placeHolder.split('-').map((e) => e.toLowerCase());
+
+    const LowerCaseVariation = segments.join('');
+    const UpperCaseVariation = segments.join('_').toUpperCase();
+    const PascalCaseVariation = segments
+      .map((e) => e[0].toUpperCase() + e.slice(1, e.length))
+      .join('');
+    const CamelCaseVariation =
+      PascalCaseVariation[0].toLowerCase() +
+      PascalCaseVariation.slice(1, PascalCaseVariation.length);
+    const SnakeCaseVariation = segments.join('_');
+
+    return {
+      UpperCaseVariation,
+      LowerCaseVariation,
+      PascalCaseVariation,
+      CamelCaseVariation,
+      SnakeCaseVariation,
+    };
   }
 
   /**
@@ -246,7 +321,17 @@ export class FileSystemManager {
     await writeFile(relativePath, '');
   }
 
-  toString(): string {
+  public print() {
+    console.log({
+      content: this.content,
+      fileName: this.fileName,
+      relativeFilePath: this.relativeFilePath,
+      branches: this.branches.map((e) => e.relativeFilePath),
+    });
+    this.branches.map((e) => e.print());
+  }
+
+  public toString(): string {
     return JSON.stringify({
       content: this.content,
       fileName: this.fileName,
@@ -255,9 +340,3 @@ export class FileSystemManager {
     });
   }
 }
-
-const s = new FileSystemManager('testdata');
-
-s.init().then((e) => {
-  console.log(s.toString());
-});
