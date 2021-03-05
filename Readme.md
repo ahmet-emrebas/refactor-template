@@ -20,8 +20,6 @@ CLI Tool to refactor a file tree structure with passed arguments.
 
 ### Installing the CLI
 
-To make a local build:
-
 ```shell
 npm install -g refactor-template
 ```
