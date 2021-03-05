@@ -4,6 +4,9 @@ import { createFile, readdir, readFile, stat, writeFile } from 'fs-extra';
 import { toCamelCase } from './util';
 import { Logger } from './logger';
 
+/**
+ * @deprecated Use FileSystemManager instead.
+ */
 export class FileTree {
   private fileName: string;
   private absolutePath: string;

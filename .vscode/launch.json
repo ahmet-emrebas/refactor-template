@@ -5,9 +5,16 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Launch Program",
+      "program": "${workspaceFolder}/src/main.ts",
+      "request": "launch",
+      "skipFiles": ["<node_internals>/**"],
+      "type": "pwa-node"
+    },
+    {
+      "name": "Jest Test Debug",
       "type": "node",
       "request": "launch",
-      "name": "Jest Tests",
       "program": "${workspaceRoot}\\node_modules\\jest\\bin\\jest.js",
       "args": ["-i"],
       "skipFiles": ["<node_internals>/**"],

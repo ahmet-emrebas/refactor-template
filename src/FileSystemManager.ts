@@ -56,6 +56,8 @@ export class FileSystemManager {
    */
   public branches: FileSystemManager[] = [];
 
+  public isPathPointFile: boolean;
+
   /**
    * @param {string} directoryRelativePath  Relative path to the directory. Ex. src/users, src/products, src/products/products-one.
    * @param {string} content file content
@@ -72,9 +74,12 @@ export class FileSystemManager {
    */
   public async init(): Promise<void> {
     const cpath = this.relativeFilePath;
+
     if (await FileSystemManager.isFileSoft(cpath)) {
+      this.isPathPointFile = true;
       this.content = (await readFileAsync(cpath)).toString();
     } else if (await FileSystemManager.isDirectorySoft(cpath)) {
+      this.isPathPointFile = false;
       const dirs = await FileSystemManager.readdirs(cpath);
 
       for (let dir of dirs) {
@@ -126,8 +131,12 @@ export class FileSystemManager {
   }
 
   public async writeHardFile() {
-    await createFile(this.relativeFilePath);
-    await writeFile(this.relativeFilePath, this.content);
+    if (this.isPathPointFile) {
+      await createFile(this.relativeFilePath);
+      await writeFile(this.relativeFilePath, this.content);
+    } else {
+      await mkdir(this.relativeFilePath);
+    }
     for (let branch of this.branches) {
       await branch.writeHardFile();
     }
@@ -281,36 +290,6 @@ export class FileSystemManager {
     if (await this.isDirectory(relativePath)) {
       return await readdir(this.resolveRelativePath(relativePath));
     }
-  }
-
-  /**
-   * @param {string} relativePath
-   * @param {string} content
-   * @throws {PathIsNotValidException}
-   * @throws {PathIsEmptyException}
-   * @throws {NoSuchAFile}
-   */
-  async createFileTree(relativePath: string, content: string): Promise<true> | never {
-    if (await FileSystemManager.isFile(relativePath)) {
-      try {
-        await writeFile(relativePath, content);
-        return true;
-      } catch (err) {
-        throw err;
-      }
-    }
-  }
-
-  /**
-   * clean the content of the file
-   * @param {string} relativePath
-   * @throws {PathIsNotValidException}
-   * @throws {PathIsEmptyException}
-   * @throws {NoSuchAFile}
-   */
-  static async clearFile(relativePath: string) {
-    await FileSystemManager.isFile(relativePath);
-    await writeFile(relativePath, '');
   }
 
   public print() {

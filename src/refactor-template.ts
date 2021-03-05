@@ -2,7 +2,6 @@
 
 const { hideBin } = require('yargs/helpers');
 import { Logger } from './logger';
-import { FileTree } from './FileTree';
 import yargs = require('yargs');
 import { FileSystemManager } from './FileSystemManager';
 
@@ -31,8 +30,6 @@ export const runCLI = () => {
           if (!placeholder || !placeholder?.trim()) {
             placeholder = source.split(/\\|\//g).pop();
             value = target.split(/\\|\//g).pop();
-            console.log('>' + placeholder + '<placeholder');
-            console.log('>' + value + '<value');
           }
           const fileTree = new FileSystemManager(source as string);
           await fileTree.init();
