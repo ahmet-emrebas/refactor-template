@@ -28,9 +28,11 @@ export const runCLI = () => {
       async (argv) => {
         let { source, target, placeholder, value } = argv as { [key: string]: string };
         try {
-          if (!placeholder) {
-            placeholder = source.split(/\\\//g).pop();
-            value = target.split(/\\\//g).pop();
+          if (!placeholder || !placeholder?.trim()) {
+            placeholder = source.split(/\\|\//g).pop();
+            value = target.split(/\\|\//g).pop();
+            console.log('>' + placeholder + '<placeholder');
+            console.log('>' + value + '<value');
           }
           const fileTree = new FileSystemManager(source as string);
           await fileTree.init();

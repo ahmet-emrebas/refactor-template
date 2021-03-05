@@ -126,18 +126,10 @@ export class FileSystemManager {
   }
 
   public async writeHardFile() {
-    await writeFile('testData/test.ts', 'content');
-    if (this.content) {
-      await createFile(this.relativeFilePath);
-      await writeFile(this.relativeFilePath, this.content);
-      for (let branch of this.branches) {
-        await branch.writeHardFile();
-      }
-    } else {
-      await mkdir(this.relativeFilePath);
-      for (let branch of this.branches) {
-        await branch.writeHardFile();
-      }
+    await createFile(this.relativeFilePath);
+    await writeFile(this.relativeFilePath, this.content);
+    for (let branch of this.branches) {
+      await branch.writeHardFile();
     }
   }
 

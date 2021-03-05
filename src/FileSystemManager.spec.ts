@@ -1,3 +1,4 @@
+import { createFile, createFileSync, mkdirSync, removeSync, writeFileSync } from 'fs-extra';
 import {
   PathIsEmptyException,
   PathIsNotValidException,
@@ -7,6 +8,26 @@ import {
 } from './FileSystemManager';
 
 describe('FileSystemManager', () => {
+  beforeAll(() => {
+    createFileSync('testdata/test.ts');
+    createFileSync('testdata/testuser/index.ts');
+    createFileSync('testdata/two/index.ts');
+    createFileSync('testdata/user/user.data');
+    createFileSync('testdata/user/core/user.core.ts');
+    createFileSync('testdata/user/USER_MODELS/user.model.ts');
+
+    writeFileSync('testdata/test.ts', 'Test Data');
+    writeFileSync('testdata/testuser/index.ts', 'Test Data');
+    writeFileSync('testdata/two/index.ts', 'Test Data');
+    writeFileSync('testdata/user/user.data', 'Test Data');
+    writeFileSync('testdata/user/core/user.core.ts', 'Test Data');
+    writeFileSync('testdata/user/USER_MODELS/user.model.ts', 'Test Data');
+  });
+
+  afterAll(() => {
+    removeSync('testdata');
+  });
+
   it('FileSystemManager should instantiate correctly.', () => {
     const fsm = new FileSystemManager('testdata', 'content');
 
