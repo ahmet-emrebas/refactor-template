@@ -4,11 +4,12 @@ const { hideBin } = require('yargs/helpers');
 import { Logger } from './logger';
 import { FileTree } from './FileTree';
 import yargs = require('yargs');
+import { FileSystemManager } from './FileSystemManager';
 
 export const runCLI = () => {
   yargs(hideBin(process.argv))
     .command(
-      'copy [source] [target]',
+      'copy [source] [target] [placeholder] [value]',
       'copy and refactor template folder',
       (yargs) => {
         yargs.positional('source', {
@@ -17,12 +18,24 @@ export const runCLI = () => {
         yargs.positional('target', {
           describe: 'name of the target folder/file',
         });
+        yargs.positional('placeholder', {
+          describe: 'placeholder (the text to be changed with new value)',
+        });
+        yargs.positional('value', {
+          describe: 'value that is replaced with all placeholder',
+        });
       },
       async (argv) => {
-        const { source, target } = argv;
+        let { source, target, placeholder, value } = argv as { [key: string]: string };
         try {
-          const fileTree = await new FileTree(source as string, true).init();
-          await fileTree.refactorTo(target as string).writeToFiles();
+          if (!placeholder) {
+            placeholder = source.split(/\\\//g).pop();
+            value = target.split(/\\\//g).pop();
+          }
+          const fileTree = new FileSystemManager(source as string);
+          await fileTree.init();
+          fileTree.refactorTo(target, placeholder, value);
+          await fileTree.writeHardFile();
         } catch (err) {
           Logger.error(err || 'Could not process the file paths!', 'Refactor');
         }

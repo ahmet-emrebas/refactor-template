@@ -9,3 +9,4 @@ tsconfig.json
 *.spec.ts
 *.test.js
 *.test.ts
+coverage
