@@ -40,6 +40,33 @@ export const runCLI = () => {
         }
       },
     )
+    .command(
+      'refactor [source] [placeholder] [value]',
+      'refactor the source',
+      (yargs) => {
+        yargs.positional('source', {
+          describe: 'name of the source folder/file',
+        });
+        yargs.positional('placeholder', {
+          describe: 'placeholder (the text to be changed with new value)',
+        });
+        yargs.positional('value', {
+          describe: 'value that is replaced with all placeholder',
+        });
+      },
+      async (argv) => {
+        let { source, placeholder, value } = argv as { [key: string]: string };
+        try {
+          const fileTree = new FileSystemManager(source);
+          await fileTree.init();
+      
+          fileTree.refactorTo(source, placeholder, value);
+          await fileTree.writeHardFile();
+        } catch (err) {
+          Logger.error(err || 'Could not process the file paths!', 'Refactor');
+        }
+      },
+    )
     .option('verbose', {
       alias: 'v',
       type: 'boolean',

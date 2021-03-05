@@ -1,5 +1,6 @@
 import { join } from 'path';
 import { readFile as readFileAsync, writeFile, readdir, stat, createFile, mkdir } from 'fs-extra';
+import { Logger } from './logger';
 
 export abstract class FileSystemMangerError extends Error {
   constructor(msg: string) {
@@ -135,7 +136,11 @@ export class FileSystemManager {
       await createFile(this.relativeFilePath);
       await writeFile(this.relativeFilePath, this.content);
     } else {
-      await mkdir(this.relativeFilePath);
+      try {
+        await mkdir(this.relativeFilePath);
+      } catch (err) {
+        Logger.info('Probably the director ' + this.relativeFilePath + ' is already exist!');
+      }
     }
     for (let branch of this.branches) {
       await branch.writeHardFile();
