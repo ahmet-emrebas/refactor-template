@@ -29,7 +29,7 @@ npm install -g refactor-template
 The following example will clone the users folder as products and replace all occurance and all veriations of the text 'users' in folder, file, and file content.
 
 ```shell
-refactor-template <source> <target> <placeholder(optional)> <new-value(optional)>
+refactor-template copy <source> <target> <placeholder(optional)> <new-value(optional)>
 refactor-template copy src/user  sr/product user product
 ```
 
